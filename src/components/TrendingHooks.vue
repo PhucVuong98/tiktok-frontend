@@ -85,7 +85,7 @@ const filterHooks = (tab) => {
 const runAITrendReporter = async () => {
   isUpdating.value = true
   try {
-    await fetch('http://localhost:8000/api/ai-update-trends', { method: 'POST' })
+    await fetch('https://tiktok-ai-backend-mq3e.onrender.com/api/ai-update-trends', { method: 'POST' })
     // Cập nhật xong thì quay về tab Tất cả và load lại dữ liệu mới nhất
     activeTab.value = 'Tất cả'
     await fetchHooks('Tất cả')

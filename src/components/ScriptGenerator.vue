@@ -58,7 +58,7 @@ const loading = ref(false)
 const generate = async () => {
   loading.value = true
   try {
-    const res = await fetch('http://localhost:8000/api/generate-script', {
+    const res = await fetch('https://tiktok-ai-backend-mq3e.onrender.com/api/generate-script', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ product_url: productUrl.value, tone: tone.value })
