@@ -68,7 +68,7 @@ const isUpdating = ref(false)
 // Lấy dữ liệu từ Backend
 const fetchHooks = async (category) => {
   try {
-    const res = await fetch(`http://localhost:8000/api/trending-hooks?category=${category}`)
+    const res = await fetch(`https://tiktok-ai-backend-mq3e.onrender.com/api/trending-hooks?category=${category}`)
     hooks.value = await res.json()
   } catch (error) {
     console.error("Lỗi kết nối Server:", error)
