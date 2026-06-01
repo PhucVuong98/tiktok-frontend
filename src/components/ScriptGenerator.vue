@@ -27,6 +27,33 @@
         </div>
       </div>
 
+      <!-- Persona picker (chỉ hiện khi mode dialogue) -->
+      <div v-if="mode === 'dialogue'" class="mb-8">
+        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-4 text-center">Chọn 2 nhân vật cho kịch bản</p>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <button
+            v-for="p in personas" :key="p.id"
+            @click="togglePersona(p.id)"
+            :class="selectedPersonas.includes(p.id)
+              ? 'border-white bg-white/10'
+              : 'border-gray-700 hover:border-gray-500'"
+            class="border-2 rounded-2xl p-4 text-left transition relative"
+            :disabled="selectedPersonas.length >= 2 && !selectedPersonas.includes(p.id)"
+          >
+            <span v-if="selectedPersonas.includes(p.id)"
+              class="absolute top-2 right-3 text-xs font-black text-white">
+              {{ selectedPersonas.indexOf(p.id) + 1 }}
+            </span>
+            <div class="text-2xl mb-1">{{ p.emoji }}</div>
+            <div class="text-sm font-black">{{ p.name }}</div>
+            <div class="text-xs text-gray-400 mt-0.5">{{ p.desc }}</div>
+          </button>
+        </div>
+        <p v-if="selectedPersonas.length < 2" class="text-center text-xs text-gray-500 mt-3">
+          Chọn đủ 2 nhân vật để tiếp tục
+        </p>
+      </div>
+
       <!-- Form -->
       <form @submit.prevent="generate" class="bg-white rounded-3xl p-2 flex flex-col md:flex-row shadow-2xl mb-12">
         <input v-model="productUrl" type="url"
@@ -38,7 +65,7 @@
           <option value="Đánh giá chân thực">Đánh giá chân thực</option>
           <option value="Drama">Drama / Vạch trần</option>
         </select>
-        <button type="submit" :disabled="loading"
+        <button type="submit" :disabled="loading || (mode === 'dialogue' && selectedPersonas.length < 2)"
           class="bg-black text-white px-8 py-4 rounded-2xl font-bold hover:bg-gray-800 transition disabled:opacity-50 whitespace-nowrap">
           {{ loading ? 'Đang viết...' : 'Tạo Kịch Bản' }}
         </button>
@@ -101,21 +128,17 @@
         <!-- Tạo voice -->
         <div class="bg-[#111] rounded-2xl border border-gray-700 p-8">
           <h3 class="text-xl font-bold mb-2">🎙️ Tạo Voice Hội Thoại</h3>
-          <p class="text-gray-500 text-sm mb-6">Mỗi nhân vật sẽ được gán giọng đọc riêng, ghép thành 1 file audio.</p>
+          <p class="text-gray-500 text-sm mb-6">Mỗi nhân vật được gán giọng riêng theo phong cách đã chọn.</p>
 
-          <!-- Giọng của từng nhân vật -->
+          <!-- Hiển thị giọng của từng nhân vật -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div v-for="(char, i) in dialogueResult.characters" :key="i"
-              class="bg-black rounded-xl p-4 border border-gray-700">
-              <p class="text-xs text-gray-400 font-bold uppercase mb-2">{{ char.name }}</p>
-              <select v-model="charVoices[char.name]"
-                class="w-full bg-[#111] border border-gray-600 text-white px-3 py-2 rounded-lg text-sm focus:outline-none">
-                <option value="nova">Nova — Nữ trẻ</option>
-                <option value="shimmer">Shimmer — Nữ nhẹ nhàng</option>
-                <option value="alloy">Alloy — Nữ tự nhiên</option>
-                <option value="onyx">Onyx — Nam trầm</option>
-                <option value="echo">Echo — Nam rõ</option>
-              </select>
+            <div v-for="char in dialogueResult.characters" :key="char.id"
+              class="bg-black rounded-xl p-4 border border-gray-700 flex items-center gap-3">
+              <span class="text-2xl">{{ char.emoji }}</span>
+              <div>
+                <p class="text-sm font-black">{{ char.name }}</p>
+                <p class="text-xs text-gray-400">Giọng: {{ char.voice }}</p>
+              </div>
             </div>
           </div>
 
@@ -140,7 +163,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import VoicePanel from './VoicePanel.vue'
 import ProductBadge from './ProductBadge.vue'
 
@@ -153,11 +176,34 @@ const result = ref(null)
 const personaResult = ref(null)
 const dialogueResult = ref(null)
 
+const personas = ref([])
+const selectedPersonas = ref([])
 const charVoices = ref({})
 const loadingVoice = ref(false)
 const dialogueAudioUrl = ref(null)
 
 const BASE_URL = 'https://tiktok-ai-backend-mq3e.onrender.com'
+
+onMounted(async () => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/voice-personas`)
+    personas.value = await res.json()
+    // Mặc định chọn 2 persona đầu
+    if (personas.value.length >= 2) {
+      selectedPersonas.value = [personas.value[4].id, personas.value[0].id]
+    }
+  } catch (e) {
+    console.error('Không load được personas', e)
+  }
+})
+
+const togglePersona = (id) => {
+  if (selectedPersonas.value.includes(id)) {
+    selectedPersonas.value = selectedPersonas.value.filter(p => p !== id)
+  } else if (selectedPersonas.value.length < 2) {
+    selectedPersonas.value.push(id)
+  }
+}
 
 const CHAR_COLORS = [
   'bg-blue-600 text-white',
@@ -228,7 +274,11 @@ const generate = async () => {
       const res = await fetch(`${BASE_URL}/api/generate-dialogue`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_url: productUrl.value })
+        body: JSON.stringify({
+          product_url: productUrl.value,
+          persona_a_id: selectedPersonas.value[0],
+          persona_b_id: selectedPersonas.value[1],
+        })
       })
       dialogueResult.value = await res.json()
     }
@@ -247,14 +297,20 @@ const generateDialogueVoice = async () => {
     dialogueAudioUrl.value = null
   }
 
-  // Inject giọng đã chọn vào từng dòng thoại trước khi gửi
+  // Map tên nhân vật → voice từ persona đã chọn
+  const charToVoice = {}
+  dialogueResult.value.characters.forEach(c => {
+    charToVoice[c.name] = c.voice
+  })
+
+  // Inject voice vào từng dòng thoại
   const dialogueWithVoices = dialogueResult.value.dialogue
     .split('\n')
     .map(line => {
       const m = line.trim().match(/^\[(.+?)\]:/)
       if (m) {
         const charName = m[1].trim()
-        const voice = charVoices.value[charName] || 'nova'
+        const voice = charToVoice[charName] || 'nova'
         return `[${charName}|${voice}]: ${line.trim().replace(/^\[.+?\]:\s*/, '')}`
       }
       return line
