@@ -66,12 +66,14 @@
             <p class="text-sm font-medium text-white line-clamp-2">{{ result.product_detected }}</p>
           </div>
         </div>
-        <pre class="whitespace-pre-wrap font-sans text-lg text-gray-300 leading-relaxed">{{ result.script }}</pre>
+        <pre class="whitespace-pre-wrap font-sans text-lg text-gray-300 leading-relaxed mb-8">{{ result.script }}</pre>
+
+        <!-- Voice panel -->
+        <VoicePanel :script="result.script" />
       </div>
 
       <!-- Kết quả: mode persona -->
       <div v-if="mode === 'persona' && personaResult">
-        <!-- Product info -->
         <div class="flex items-center space-x-4 mb-8 bg-[#111] p-4 rounded-xl border border-gray-700">
           <img v-if="personaResult.product_image" :src="personaResult.product_image" alt="Product" class="w-16 h-16 object-cover rounded-lg">
           <div>
@@ -80,27 +82,25 @@
           </div>
         </div>
 
-        <!-- 3 persona cards -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div
             v-for="s in personaResult.scripts"
             :key="s.id"
-            class="bg-[#111] border border-gray-700 rounded-2xl p-6 flex flex-col"
+            class="bg-[#111] border border-gray-700 rounded-2xl p-6 flex flex-col gap-4"
           >
-            <div class="flex justify-between items-start mb-4">
+            <div class="flex justify-between items-start">
               <div>
                 <span class="text-2xl">{{ s.emoji }}</span>
                 <h4 class="text-base font-black mt-1">{{ s.name }}</h4>
                 <p class="text-xs text-gray-500 mt-0.5">{{ s.desc }}</p>
               </div>
-              <button
-                @click="copyText(s.script)"
-                class="text-xs bg-white text-black px-3 py-1 rounded-full font-bold shrink-0"
-              >
+              <button @click="copyText(s.script)" class="text-xs bg-white text-black px-3 py-1 rounded-full font-bold shrink-0">
                 Copy
               </button>
             </div>
             <pre class="whitespace-pre-wrap font-sans text-sm text-gray-300 leading-relaxed flex-1">{{ s.script }}</pre>
+            <!-- Voice panel per persona -->
+            <VoicePanel :script="s.script" />
           </div>
         </div>
       </div>
@@ -111,6 +111,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import VoicePanel from './VoicePanel.vue'
 
 const productUrl = ref('')
 const tone = ref('Hài hước')
