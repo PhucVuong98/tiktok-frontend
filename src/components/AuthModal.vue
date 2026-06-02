@@ -83,7 +83,7 @@ import { auth } from '../firebase'
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
   GoogleAuthProvider,
 } from 'firebase/auth'
 
@@ -118,11 +118,9 @@ const handleGoogle = async () => {
   loadingGoogle.value = true
   errorMsg.value = ''
   try {
-    await signInWithPopup(auth, new GoogleAuthProvider())
-    emit('close')
+    await signInWithRedirect(auth, new GoogleAuthProvider())
   } catch (err) {
     errorMsg.value = friendlyError(err.code)
-  } finally {
     loadingGoogle.value = false
   }
 }

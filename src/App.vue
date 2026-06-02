@@ -38,7 +38,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { auth } from './firebase'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { onAuthStateChanged, signOut, getRedirectResult } from 'firebase/auth'
 import Hero from './components/Hero.vue'
 import TrendingHooks from './components/TrendingHooks.vue'
 import ScriptGenerator from './components/ScriptGenerator.vue'
@@ -51,6 +51,7 @@ onMounted(() => {
   onAuthStateChanged(auth, (u) => {
     user.value = u
   })
+  getRedirectResult(auth).catch(() => {})
 })
 
 const logout = async () => {

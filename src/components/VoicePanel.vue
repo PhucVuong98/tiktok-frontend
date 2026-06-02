@@ -17,8 +17,9 @@
     <button
       @click="generateVoice"
       :disabled="loadingVoice"
-      class="w-full bg-white text-black py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition disabled:opacity-50 mb-4"
+      class="w-full bg-white text-black py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition disabled:opacity-50 mb-4 flex items-center justify-center gap-2"
     >
+      <span v-if="loadingVoice" class="w-4 h-4 border-2 border-gray-400 border-t-black rounded-full animate-spin"></span>
       {{ loadingVoice ? 'Đang tạo giọng đọc...' : '🎙️ Tạo Voice' }}
     </button>
 

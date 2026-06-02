@@ -66,10 +66,17 @@
           <option value="Drama">Drama / Vạch trần</option>
         </select>
         <button type="submit" :disabled="loading || (mode === 'dialogue' && selectedPersonas.length < 2)"
-          class="bg-black text-white px-8 py-4 rounded-2xl font-bold hover:bg-gray-800 transition disabled:opacity-50 whitespace-nowrap">
+          class="bg-black text-white px-8 py-4 rounded-2xl font-bold hover:bg-gray-800 transition disabled:opacity-50 whitespace-nowrap flex items-center justify-center gap-2">
+          <span v-if="loading" class="w-4 h-4 border-2 border-gray-600 border-t-white rounded-full animate-spin"></span>
           {{ loading ? 'Đang viết...' : 'Tạo Kịch Bản' }}
         </button>
       </form>
+
+      <!-- Loading spinner -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4">
+        <div class="w-12 h-12 border-4 border-gray-700 border-t-white rounded-full animate-spin"></div>
+        <p class="text-gray-400 text-sm font-medium animate-pulse">AI đang viết kịch bản cho bạn...</p>
+      </div>
 
       <!-- Kết quả: single -->
       <div v-if="mode === 'single' && result" class="bg-[#111] p-8 rounded-2xl border border-gray-800">
@@ -143,7 +150,8 @@
           </div>
 
           <button @click="generateDialogueVoice" :disabled="loadingVoice"
-            class="w-full bg-white text-black py-4 rounded-xl font-black text-sm hover:bg-gray-200 transition disabled:opacity-50">
+            class="w-full bg-white text-black py-4 rounded-xl font-black text-sm hover:bg-gray-200 transition disabled:opacity-50 flex items-center justify-center gap-2">
+            <span v-if="loadingVoice" class="w-4 h-4 border-2 border-gray-400 border-t-black rounded-full animate-spin"></span>
             {{ loadingVoice ? 'Đang ghép audio...' : '🎙️ Tạo Voice & Ghép Audio' }}
           </button>
 
