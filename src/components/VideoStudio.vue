@@ -3,7 +3,7 @@
     <div class="max-w-3xl mx-auto">
       <div class="text-center mb-10">
         <h2 class="text-4xl font-black uppercase tracking-tight mb-2">🎬 Tạo Video TikTok</h2>
-        <p class="text-gray-400">Nhập script + ảnh sản phẩm, AI ghép thành video 9:16 kèm voice. Mất ~30 giây.</p>
+        <p class="text-gray-400">AI dựng cảnh động (zoom/pan điện ảnh) + caption + voice thành video 9:16. Mất ~1–2 phút.</p>
       </div>
 
       <div class="bg-[#111] rounded-3xl border border-gray-800 p-8 space-y-6">
@@ -68,7 +68,7 @@
           class="w-full bg-gradient-to-r from-pink-600 to-rose-500 text-white py-4 rounded-xl font-black text-sm hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <span v-if="loadingVideo" class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
-          {{ loadingVideo ? 'Đang tạo video (~30s)...' : '🎬 Xuất Video TikTok' }}
+          {{ loadingVideo ? 'AI đang dựng video (~1–2 phút)...' : '🎬 Xuất Video TikTok' }}
         </button>
 
         <p v-if="videoError" class="text-red-400 text-xs">{{ videoError }}</p>
