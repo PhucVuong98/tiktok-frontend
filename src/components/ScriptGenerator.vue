@@ -82,18 +82,11 @@
       <div v-if="mode === 'single' && result" class="bg-[#111] p-8 rounded-2xl border border-gray-800">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-bold">Kịch bản của bạn:</h3>
-          <div class="flex gap-2">
-            <button
-              @click="sendToVideo({ script: result.script, productImage: result.product_image, productName: result.product_detected })"
-              class="text-xs bg-gradient-to-r from-pink-600 to-rose-500 text-white px-3 py-1 rounded-full font-bold hover:opacity-90 transition">
-              🎬 Gửi sang tab Video
-            </button>
-            <button @click="copyText(result.script)" class="text-xs bg-white text-black px-3 py-1 rounded-full font-bold">Copy</button>
-          </div>
+          <button @click="copyText(result.script)" class="text-xs bg-white text-black px-3 py-1 rounded-full font-bold">Copy</button>
         </div>
         <ProductBadge :image="result.product_image" :name="result.product_detected" />
         <pre class="whitespace-pre-wrap font-sans text-lg text-gray-300 leading-relaxed mb-8">{{ result.script }}</pre>
-        <VoicePanel :script="result.script" />
+        <VoicePanel :script="result.script" :productImage="result.product_image" :productName="result.product_detected" />
       </div>
 
       <!-- Kết quả: persona -->
@@ -111,12 +104,7 @@
               <button @click="copyText(s.script)" class="text-xs bg-white text-black px-3 py-1 rounded-full font-bold shrink-0">Copy</button>
             </div>
             <pre class="whitespace-pre-wrap font-sans text-sm text-gray-300 leading-relaxed flex-1">{{ s.script }}</pre>
-            <button
-              @click="sendToVideo({ script: s.script, productImage: personaResult.product_image, productName: personaResult.product_detected })"
-              class="text-xs bg-gradient-to-r from-pink-600 to-rose-500 text-white px-3 py-2 rounded-full font-bold hover:opacity-90 transition">
-              🎬 Gửi sang tab Video
-            </button>
-            <VoicePanel :script="s.script" />
+            <VoicePanel :script="s.script" :productImage="personaResult.product_image" :productName="personaResult.product_detected" />
           </div>
         </div>
       </div>
@@ -131,7 +119,7 @@
             <h3 class="text-xl font-bold">🎭 Kịch bản hội thoại</h3>
             <div class="flex gap-2">
               <button
-                @click="sendToVideo({ script: dialogueResult.dialogue, productImage: dialogueResult.product_image, productName: dialogueResult.product_detected })"
+                @click="sendToVideo({ script: dialogueResult.dialogue, productImage: dialogueResult.product_image, productName: dialogueResult.product_detected, voice: dialogueResult.characters?.[0]?.voice || 'nova' })"
                 class="text-xs bg-gradient-to-r from-pink-600 to-rose-500 text-white px-3 py-1 rounded-full font-bold hover:opacity-90 transition">
                 🎬 Gửi sang tab Video
               </button>

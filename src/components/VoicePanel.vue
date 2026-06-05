@@ -36,14 +36,25 @@
     </div>
 
     <p v-if="errorMsg" class="text-red-400 text-xs mt-2 mb-4">{{ errorMsg }}</p>
+
+    <!-- Gửi sang tab Video (giữ nguyên giọng đã chọn ở trên) -->
+    <button
+      @click="sendToVideo({ script, productImage, productName, voice: selectedVoice })"
+      class="w-full bg-gradient-to-r from-pink-600 to-rose-500 text-white py-3 rounded-xl font-bold text-sm hover:opacity-90 transition flex items-center justify-center gap-2"
+    >
+      🎬 Gửi sang tab Video
+    </button>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { sendToVideo } from '../store'
 
 const props = defineProps({
   script: String,
+  productImage: { type: String, default: '' },
+  productName: { type: String, default: '' },
 })
 
 const BASE_URL = 'https://tiktok-ai-backend-mq3e.onrender.com'

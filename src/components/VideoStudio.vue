@@ -108,7 +108,7 @@ const voices = [
 const script = ref(store.videoDraft.script)
 const productImage = ref(store.videoDraft.productImage)
 const productName = ref(store.videoDraft.productName)
-const selectedVoice = ref('nova')
+const selectedVoice = ref(store.videoDraft.voice || 'nova')
 
 const loadingVideo = ref(false)
 const videoUrl = ref(null)
