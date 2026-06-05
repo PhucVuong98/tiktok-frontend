@@ -119,7 +119,7 @@
             <h3 class="text-xl font-bold">🎭 Kịch bản hội thoại</h3>
             <div class="flex gap-2">
               <button
-                @click="sendToVideo({ script: dialogueResult.dialogue, productImage: dialogueResult.product_image, productName: dialogueResult.product_detected, voice: dialogueResult.characters?.[0]?.voice || 'nova' })"
+                @click="sendDialogueToVideo"
                 class="text-xs bg-gradient-to-r from-pink-600 to-rose-500 text-white px-3 py-1 rounded-full font-bold hover:opacity-90 transition">
                 🎬 Gửi sang tab Video
               </button>
@@ -305,6 +305,34 @@ const generate = async () => {
   }
 }
 
+// Gắn giọng của từng nhân vật vào mỗi dòng thoại: [Tên|voice]: nội dung
+const injectVoices = (d) => {
+  const charToVoice = {}
+  d.characters.forEach(c => { charToVoice[c.name] = c.voice })
+  return d.dialogue
+    .split('\n')
+    .map(line => {
+      const m = line.trim().match(/^\[(.+?)\]:/)
+      if (!m) return line
+      const charName = m[1].trim()
+      const voice = charToVoice[charName] || 'nova'
+      return `[${charName}|${voice}]: ${line.trim().replace(/^\[.+?\]:\s*/, '')}`
+    })
+    .join('\n')
+}
+
+// Gửi hội thoại sang tab Video, giữ giọng riêng của từng nhân vật (đa giọng)
+const sendDialogueToVideo = () => {
+  const d = dialogueResult.value
+  if (!d) return
+  sendToVideo({
+    script: injectVoices(d),
+    productImage: d.product_image,
+    productName: d.product_detected,
+    voice: d.characters?.[0]?.voice || 'nova',
+  })
+}
+
 const generateDialogueVoice = async () => {
   if (!dialogueResult.value?.dialogue) return
   loadingVoice.value = true
@@ -313,25 +341,7 @@ const generateDialogueVoice = async () => {
     dialogueAudioUrl.value = null
   }
 
-  // Map tên nhân vật → voice từ persona đã chọn
-  const charToVoice = {}
-  dialogueResult.value.characters.forEach(c => {
-    charToVoice[c.name] = c.voice
-  })
-
-  // Inject voice vào từng dòng thoại
-  const dialogueWithVoices = dialogueResult.value.dialogue
-    .split('\n')
-    .map(line => {
-      const m = line.trim().match(/^\[(.+?)\]:/)
-      if (m) {
-        const charName = m[1].trim()
-        const voice = charToVoice[charName] || 'nova'
-        return `[${charName}|${voice}]: ${line.trim().replace(/^\[.+?\]:\s*/, '')}`
-      }
-      return line
-    })
-    .join('\n')
+  const dialogueWithVoices = injectVoices(dialogueResult.value)
 
   try {
     const res = await fetch(`${BASE_URL}/api/generate-dialogue-voice`, {
