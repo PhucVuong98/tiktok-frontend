@@ -62,7 +62,7 @@
           </div>
           <p class="text-gray-500 text-xs mt-2">
             {{ mode === 'single'
-              ? 'Một người đọc review sản phẩm, nền bám theo sản phẩm, không có hoạt hình nhân vật.'
+              ? 'AI viết lại thành lời tự review tự nhiên theo phong cách nhân vật đã chọn, nền bám theo sản phẩm, không có hoạt hình nhân vật.'
               : 'Hai nhân vật trò chuyện qua lại, có hoạt hình nhân vật mấp máy miệng khi nói.' }}
           </p>
         </div>
