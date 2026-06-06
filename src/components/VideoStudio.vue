@@ -3,7 +3,7 @@
     <div class="max-w-3xl mx-auto">
       <div class="text-center mb-10">
         <h2 class="text-4xl font-black uppercase tracking-tight mb-2">🎬 Tạo Video TikTok</h2>
-        <p class="text-gray-400">AI biến kịch bản thành <b class="text-white">hội thoại 2 nhân vật</b> (mỗi người một giọng) + cảnh động + caption → video 9:16. Mất ~1–2 phút.</p>
+        <p class="text-gray-400">AI biến kịch bản thành video 9:16: <b class="text-white">1 nhân vật review</b> hoặc <b class="text-white">2 nhân vật hội thoại</b> + cảnh động + caption. Mất ~1–2 phút.</p>
       </div>
 
       <div class="bg-[#111] rounded-3xl border border-gray-800 p-8 space-y-6">
@@ -45,10 +45,34 @@
           <img :src="productImage" alt="preview" class="h-32 rounded-xl object-cover border border-gray-700" />
         </div>
 
-        <!-- Persona pickers: 2 nhân vật hội thoại -->
+        <!-- Mode chọn kiểu video -->
+        <div>
+          <label class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2 block">Chế độ video</label>
+          <div class="flex gap-2">
+            <button
+              @click="mode = 'single'"
+              :class="mode === 'single' ? 'bg-white text-black' : 'bg-[#222] text-gray-400 hover:text-white border border-gray-700'"
+              class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition"
+            >🧍 1 nhân vật review</button>
+            <button
+              @click="mode = 'dialogue'"
+              :class="mode === 'dialogue' ? 'bg-white text-black' : 'bg-[#222] text-gray-400 hover:text-white border border-gray-700'"
+              class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition"
+            >💬 2 nhân vật hội thoại</button>
+          </div>
+          <p class="text-gray-500 text-xs mt-2">
+            {{ mode === 'single'
+              ? 'Một người đọc review sản phẩm, nền bám theo sản phẩm, không có hoạt hình nhân vật.'
+              : 'Hai nhân vật trò chuyện qua lại, có hoạt hình nhân vật mấp máy miệng khi nói.' }}
+          </p>
+        </div>
+
+        <!-- Persona pickers -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2 block">Nhân vật A</label>
+            <label class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2 block">
+              {{ mode === 'single' ? 'Người review (giọng)' : 'Nhân vật A' }}
+            </label>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="p in personas"
@@ -61,7 +85,7 @@
               </button>
             </div>
           </div>
-          <div>
+          <div v-if="mode === 'dialogue'">
             <label class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2 block">Nhân vật B</label>
             <div class="flex flex-wrap gap-2">
               <button
@@ -76,7 +100,7 @@
             </div>
           </div>
         </div>
-        <p v-if="personaA === personaB" class="text-amber-400 text-xs -mt-3">
+        <p v-if="mode === 'dialogue' && personaA === personaB" class="text-amber-400 text-xs -mt-3">
           Đang chọn trùng nhân vật — hệ thống sẽ tự đổi Nhân vật B sang người khác để có 2 giọng.
         </p>
 
@@ -130,8 +154,9 @@ const personas = [
 const script = ref(store.videoDraft.script)
 const productImage = ref(store.videoDraft.productImage)
 const productName = ref(store.videoDraft.productName)
-const personaA = ref('genz')   // nhân vật A mặc định
-const personaB = ref('cool')   // nhân vật B mặc định
+const mode = ref('single')     // 'single' = 1 nhân vật review | 'dialogue' = 2 nhân vật hội thoại
+const personaA = ref('genz')   // nhân vật A / người review
+const personaB = ref('cool')   // nhân vật B (mode dialogue)
 
 const loadingVideo = ref(false)
 const videoUrl = ref(null)
@@ -156,6 +181,7 @@ const startJob = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         script: script.value,
+        mode: mode.value,
         persona_a_id: personaA.value,
         persona_b_id: personaB.value,
         product_image_url: productImage.value,
