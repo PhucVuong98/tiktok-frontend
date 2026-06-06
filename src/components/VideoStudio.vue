@@ -68,9 +68,10 @@
           class="w-full bg-gradient-to-r from-pink-600 to-rose-500 text-white py-4 rounded-xl font-black text-sm hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <span v-if="loadingVideo" class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
-          {{ loadingVideo ? 'AI đang dựng video (~1–2 phút)...' : '🎬 Xuất Video TikTok' }}
+          {{ loadingVideo ? `AI đang dựng video... ${elapsed}s (~1–2 phút)` : '🎬 Xuất Video TikTok' }}
         </button>
 
+        <p v-if="statusMsg" class="text-amber-400 text-xs">{{ statusMsg }}</p>
         <p v-if="videoError" class="text-red-400 text-xs">{{ videoError }}</p>
 
         <!-- Result -->
@@ -113,17 +114,18 @@ const selectedVoice = ref(store.videoDraft.voice || 'nova')
 const loadingVideo = ref(false)
 const videoUrl = ref(null)
 const videoError = ref('')
+const statusMsg = ref('')   // thông báo trạng thái (không phải lỗi), vd "đang khởi động lại"
+const elapsed = ref(0)      // số giây đã trôi qua, hiển thị để biết đang chạy
 
-const generateVideo = async () => {
-  if (!script.value.trim()) return
-  loadingVideo.value = true
-  videoError.value = ''
-  if (videoUrl.value) {
-    URL.revokeObjectURL(videoUrl.value)
-    videoUrl.value = null
-  }
+// 4 phút: đủ cho cold start server (~20s) + dựng video (~60s) + biên độ an toàn.
+const REQUEST_TIMEOUT = 240000
+
+// Một lần gọi API có timeout cứng bằng AbortController, tránh treo vô hạn.
+const fetchVideoOnce = async () => {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
   try {
-    const res = await fetch(`${BASE_URL}/api/generate-video`, {
+    return await fetch(`${BASE_URL}/api/generate-video`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -131,15 +133,63 @@ const generateVideo = async () => {
         voice: selectedVoice.value,
         product_image_url: productImage.value,
         product_name: productName.value,
-      })
+      }),
+      signal: controller.signal,
     })
-    if (!res.ok) throw new Error(await res.text())
-    const blob = await res.blob()
-    videoUrl.value = URL.createObjectURL(blob)
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+const generateVideo = async () => {
+  if (!script.value.trim()) return
+  loadingVideo.value = true
+  videoError.value = ''
+  statusMsg.value = ''
+  elapsed.value = 0
+  const ticker = setInterval(() => { elapsed.value += 1 }, 1000)
+  if (videoUrl.value) {
+    URL.revokeObjectURL(videoUrl.value)
+    videoUrl.value = null
+  }
+
+  let attempt = 0
+  try {
+    while (true) {
+      attempt += 1
+      try {
+        const res = await fetchVideoOnce()
+        if (!res.ok) {
+          const detail = await res.text().catch(() => '')
+          throw new Error(detail || `HTTP ${res.status}`)
+        }
+        const blob = await res.blob()
+        videoUrl.value = URL.createObjectURL(blob)
+        statusMsg.value = ''
+        break
+      } catch (err) {
+        // TypeError = "Failed to fetch" (NET ERROR), thường do server free-tier
+        // vừa ngủ dậy -> thử lại đúng 1 lần. Timeout thật (AbortError) thì không
+        // lặp để khỏi đợi thêm 4 phút nữa.
+        if (err.name === 'TypeError' && attempt < 2) {
+          statusMsg.value = 'Server đang khởi động, tự thử lại...'
+          continue
+        }
+        throw err
+      }
+    }
   } catch (err) {
-    videoError.value = 'Tạo video thất bại, thử lại nhé.'
+    if (err.name === 'AbortError') {
+      videoError.value = 'Quá thời gian chờ (server có thể đang quá tải). Thử lại sau giây lát nhé.'
+    } else if (err.name === 'TypeError') {
+      videoError.value = 'Không kết nối được server. Kiểm tra mạng rồi thử lại nhé.'
+    } else {
+      videoError.value = 'Tạo video thất bại: ' + (err.message || 'lỗi không xác định')
+    }
     console.error(err)
   } finally {
+    statusMsg.value = ''
+    clearInterval(ticker)
     loadingVideo.value = false
   }
 }
