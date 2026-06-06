@@ -175,9 +175,9 @@ const startJob = async () => {
   }
 }
 
-// Poll trạng thái tới khi xong. Tối đa ~10 phút (200 lần × 3s).
+// Poll trạng thái tới khi xong. Tối đa ~13 phút (260 lần × 3s).
 const pollUntilDone = async (jobId) => {
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 260; i++) {
     await sleep(3000)
     let res
     try {
