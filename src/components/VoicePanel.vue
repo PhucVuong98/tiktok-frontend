@@ -50,14 +50,13 @@
 <script setup>
 import { ref } from 'vue'
 import { sendToVideo } from '../store'
+import { authedFetch, ApiError } from '../api'
 
 const props = defineProps({
   script: String,
   productImage: { type: String, default: '' },
   productName: { type: String, default: '' },
 })
-
-const BASE_URL = 'https://tiktok-ai-backend-mq3e.onrender.com'
 
 const voices = [
   { id: 'nova',    label: 'Nova — Nữ trẻ' },
@@ -80,7 +79,7 @@ const generateVoice = async () => {
     audioUrl.value = null
   }
   try {
-    const res = await fetch(`${BASE_URL}/api/generate-voice`, {
+    const res = await authedFetch('/api/generate-voice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ script: props.script, voice: selectedVoice.value })
@@ -89,7 +88,7 @@ const generateVoice = async () => {
     const blob = await res.blob()
     audioUrl.value = URL.createObjectURL(blob)
   } catch (err) {
-    errorMsg.value = 'Tạo voice thất bại, thử lại nhé.'
+    errorMsg.value = err instanceof ApiError ? err.message : 'Tạo voice thất bại, thử lại nhé.'
     console.error(err)
   } finally {
     loadingVoice.value = false

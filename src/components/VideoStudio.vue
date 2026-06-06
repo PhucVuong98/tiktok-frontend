@@ -136,8 +136,7 @@
 <script setup>
 import { ref } from 'vue'
 import { store } from '../store'
-
-const BASE_URL = 'https://tiktok-ai-backend-mq3e.onrender.com'
+import { authedFetch, refreshCredits, ApiError, BASE_URL } from '../api'
 
 // Danh sách nhân vật (khớp VOICE_PERSONAS ở backend, theo id).
 const personas = [
@@ -176,7 +175,7 @@ const startJob = async () => {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 60000)
   try {
-    const res = await fetch(`${BASE_URL}/api/generate-video`, {
+    const res = await authedFetch('/api/generate-video', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -216,7 +215,12 @@ const pollUntilDone = async (jobId) => {
     const data = await res.json()
     if (data.status === 'done') return
     if (data.status === 'error') throw new Error(data.error || 'Lỗi tạo video')
-    // pending / processing -> tiếp tục chờ
+    // pending (đang xếp hàng) / processing (đang dựng) -> tiếp tục chờ
+    if (data.status === 'pending' && data.position) {
+      statusMsg.value = `Đang xếp hàng — vị trí thứ ${data.position}...`
+    } else if (data.status === 'processing') {
+      statusMsg.value = 'AI đang dựng video...'
+    }
   }
   throw new Error('Quá thời gian tạo video, thử lại nhé.')
 }
@@ -260,7 +264,10 @@ const generateVideo = async () => {
     videoUrl.value = URL.createObjectURL(blob)
     statusMsg.value = ''
   } catch (err) {
-    if (err.name === 'AbortError') {
+    if (err instanceof ApiError) {
+      // Cần đăng nhập (modal đã tự bật) hoặc hết credit — hiện đúng thông báo.
+      videoError.value = err.message
+    } else if (err.name === 'AbortError') {
       videoError.value = 'Quá thời gian chờ khởi tạo. Thử lại nhé.'
     } else if (err.name === 'TypeError') {
       videoError.value = 'Không kết nối được server. Kiểm tra mạng rồi thử lại nhé.'
@@ -272,6 +279,7 @@ const generateVideo = async () => {
     statusMsg.value = ''
     clearInterval(ticker)
     loadingVideo.value = false
+    refreshCredits()   // cập nhật số credit (đã trừ, hoặc đã hoàn nếu render lỗi)
   }
 }
 </script>

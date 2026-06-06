@@ -18,12 +18,17 @@
       <div class="flex items-center space-x-4">
         <!-- Chưa đăng nhập -->
         <template v-if="!user">
-          <button @click="showAuth = true" class="font-medium text-sm hover:text-gray-500">Đăng Nhập</button>
-          <button @click="showAuth = true" class="bg-black text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition">Nâng cấp Pro</button>
+          <button @click="store.showAuth = true" class="font-medium text-sm hover:text-gray-500">Đăng Nhập</button>
+          <button @click="store.showAuth = true" class="bg-black text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition">Nâng cấp Pro</button>
         </template>
 
         <!-- Đã đăng nhập -->
         <template v-else>
+          <span v-if="store.credits !== null"
+            class="text-xs font-black bg-black text-white px-3 py-1.5 rounded-full"
+            title="Số credit còn lại (mỗi video tốn 1 credit)">
+            ⚡ {{ store.credits }} credit
+          </span>
           <span class="text-sm font-medium text-gray-600 hidden md:block">{{ user.email }}</span>
           <button @click="logout" class="font-medium text-sm text-red-500 hover:text-red-700">Đăng Xuất</button>
         </template>
@@ -31,7 +36,7 @@
     </nav>
 
     <!-- Modal đăng nhập -->
-    <AuthModal v-if="showAuth" @close="showAuth = false" />
+    <AuthModal v-if="store.showAuth" @close="store.showAuth = false" />
 
     <!-- Components -->
     <main>
@@ -55,13 +60,20 @@ import ScriptGenerator from './components/ScriptGenerator.vue'
 import VideoStudio from './components/VideoStudio.vue'
 import AuthModal from './components/AuthModal.vue'
 import { store } from './store'
+import { refreshCredits } from './api'
 
 const user = ref(null)
-const showAuth = ref(false)
 
 onMounted(() => {
   onAuthStateChanged(auth, (u) => {
     user.value = u
+    store.user = u
+    if (u) {
+      store.showAuth = false   // đăng nhập xong thì đóng modal
+      refreshCredits()         // nạp số credit hiển thị
+    } else {
+      store.credits = null
+    }
   })
   getRedirectResult(auth).catch(() => {})
 })

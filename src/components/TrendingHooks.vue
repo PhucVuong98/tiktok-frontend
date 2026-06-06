@@ -59,6 +59,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { authedFetch, ApiError } from '../api'
 
 const tabs = ['Tất cả', 'Trend', 'Drama', 'Dễ làm', 'Bán hàng']
 const activeTab = ref('Tất cả')
@@ -85,13 +86,13 @@ const filterHooks = (tab) => {
 const runAITrendReporter = async () => {
   isUpdating.value = true
   try {
-    await fetch('https://tiktok-ai-backend-mq3e.onrender.com/api/ai-update-trends', { method: 'POST' })
+    await authedFetch('/api/ai-update-trends', { method: 'POST' })
     // Cập nhật xong thì quay về tab Tất cả và load lại dữ liệu mới nhất
     activeTab.value = 'Tất cả'
     await fetchHooks('Tất cả')
     alert("AI đã tổng hợp xong các Hook thịnh hành mới nhất!")
   } catch (error) {
-    alert("Có lỗi khi gọi AI. Vui lòng thử lại.")
+    alert(error instanceof ApiError ? error.message : "Có lỗi khi gọi AI. Vui lòng thử lại.")
   } finally {
     isUpdating.value = false
   }

@@ -72,6 +72,9 @@
         </button>
       </form>
 
+      <!-- Thông báo lỗi (cần đăng nhập / hết credit / lỗi khác) -->
+      <p v-if="errorMsg" class="text-center text-rose-400 text-sm font-medium -mt-8 mb-8">{{ errorMsg }}</p>
+
       <!-- Loading spinner -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4">
         <div class="w-12 h-12 border-4 border-gray-700 border-t-white rounded-full animate-spin"></div>
@@ -182,11 +185,13 @@ import { ref, computed, watch, onMounted } from 'vue'
 import VoicePanel from './VoicePanel.vue'
 import ProductBadge from './ProductBadge.vue'
 import { sendToVideo } from '../store'
+import { authedFetch, ApiError, BASE_URL } from '../api'
 
 const productUrl = ref('')
 const tone = ref('Hài hước')
 const mode = ref('single')
 const loading = ref(false)
+const errorMsg = ref('')
 
 const result = ref(null)
 const personaResult = ref(null)
@@ -197,8 +202,6 @@ const selectedPersonas = ref([])
 const charVoices = ref({})
 const loadingVoice = ref(false)
 const dialogueAudioUrl = ref(null)
-
-const BASE_URL = 'https://tiktok-ai-backend-mq3e.onrender.com'
 
 onMounted(async () => {
   try {
@@ -267,27 +270,28 @@ watch(dialogueResult, (val) => {
 
 const generate = async () => {
   loading.value = true
+  errorMsg.value = ''
   result.value = null
   personaResult.value = null
   dialogueResult.value = null
   dialogueAudioUrl.value = null
   try {
     if (mode.value === 'single') {
-      const res = await fetch(`${BASE_URL}/api/generate-script`, {
+      const res = await authedFetch('/api/generate-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ product_url: productUrl.value, tone: tone.value })
       })
       result.value = await res.json()
     } else if (mode.value === 'persona') {
-      const res = await fetch(`${BASE_URL}/api/generate-persona-scripts`, {
+      const res = await authedFetch('/api/generate-persona-scripts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ product_url: productUrl.value })
       })
       personaResult.value = await res.json()
     } else {
-      const res = await fetch(`${BASE_URL}/api/generate-dialogue`, {
+      const res = await authedFetch('/api/generate-dialogue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -299,6 +303,9 @@ const generate = async () => {
       dialogueResult.value = await res.json()
     }
   } catch (error) {
+    errorMsg.value = error instanceof ApiError
+      ? error.message
+      : 'Tạo kịch bản thất bại, thử lại nhé.'
     console.error('Lỗi:', error)
   } finally {
     loading.value = false
@@ -344,7 +351,7 @@ const generateDialogueVoice = async () => {
   const dialogueWithVoices = injectVoices(dialogueResult.value)
 
   try {
-    const res = await fetch(`${BASE_URL}/api/generate-dialogue-voice`, {
+    const res = await authedFetch('/api/generate-dialogue-voice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ dialogue: dialogueWithVoices })
@@ -354,7 +361,7 @@ const generateDialogueVoice = async () => {
     dialogueAudioUrl.value = URL.createObjectURL(blob)
   } catch (err) {
     console.error('Lỗi tạo voice:', err)
-    alert('Tạo voice thất bại, thử lại nhé.')
+    alert(err instanceof ApiError ? err.message : 'Tạo voice thất bại, thử lại nhé.')
   } finally {
     loadingVoice.value = false
   }

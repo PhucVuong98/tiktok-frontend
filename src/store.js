@@ -4,6 +4,11 @@ import { reactive } from 'vue'
 export const store = reactive({
   view: 'home', // 'home' | 'video'
   videoDraft: { script: '', productImage: '', productName: '', voice: 'nova' },
+
+  // Auth + credit (đặt ở store để mọi component đọc/ghi chung)
+  user: null,       // firebase user (null = chưa đăng nhập)
+  credits: null,    // số credit còn lại (null = chưa load)
+  showAuth: false,  // bật modal đăng nhập từ bất kỳ đâu: store.showAuth = true
 })
 
 // Đổ dữ liệu từ kết quả script sang tab Video rồi chuyển view
