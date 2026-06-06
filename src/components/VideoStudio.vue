@@ -117,15 +117,19 @@ const videoError = ref('')
 const statusMsg = ref('')   // thông báo trạng thái (không phải lỗi), vd "đang khởi động lại"
 const elapsed = ref(0)      // số giây đã trôi qua, hiển thị để biết đang chạy
 
-// 4 phút: đủ cho cold start server (~20s) + dựng video (~60s) + biên độ an toàn.
-const REQUEST_TIMEOUT = 240000
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-// Một lần gọi API có timeout cứng bằng AbortController, tránh treo vô hạn.
-const fetchVideoOnce = async () => {
+// Cơ chế JOB BẤT ĐỒNG BỘ — không còn phụ thuộc độ dài video.
+// 1) POST tạo job -> nhận job_id ngay (request rất nhanh, không chạm timeout 100s).
+// 2) Poll /video-status mỗi 3s tới khi 'done' hoặc 'error'.
+// 3) GET /video-result tải MP4 về.
+
+// POST khởi tạo job. Có timeout cứng 60s (chỉ cần đủ cho cold start ~20s).
+const startJob = async () => {
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+  const timer = setTimeout(() => controller.abort(), 60000)
   try {
-    return await fetch(`${BASE_URL}/api/generate-video`, {
+    const res = await fetch(`${BASE_URL}/api/generate-video`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -136,9 +140,36 @@ const fetchVideoOnce = async () => {
       }),
       signal: controller.signal,
     })
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '')
+      throw new Error(detail || `HTTP ${res.status}`)
+    }
+    const data = await res.json()
+    if (!data.job_id) throw new Error('Server không trả về job_id')
+    return data.job_id
   } finally {
     clearTimeout(timer)
   }
+}
+
+// Poll trạng thái tới khi xong. Tối đa ~10 phút (200 lần × 3s).
+const pollUntilDone = async (jobId) => {
+  for (let i = 0; i < 200; i++) {
+    await sleep(3000)
+    let res
+    try {
+      res = await fetch(`${BASE_URL}/api/video-status/${jobId}`)
+    } catch {
+      continue // lỗi mạng tạm thời -> thử lại vòng sau
+    }
+    if (res.status === 404) throw new Error('Job đã hết hạn, thử tạo lại nhé.')
+    if (!res.ok) continue
+    const data = await res.json()
+    if (data.status === 'done') return
+    if (data.status === 'error') throw new Error(data.error || 'Lỗi tạo video')
+    // pending / processing -> tiếp tục chờ
+  }
+  throw new Error('Quá thời gian tạo video, thử lại nhé.')
 }
 
 const generateVideo = async () => {
@@ -153,34 +184,35 @@ const generateVideo = async () => {
     videoUrl.value = null
   }
 
-  let attempt = 0
   try {
-    while (true) {
-      attempt += 1
+    // Khởi tạo job, thử lại 1 lần nếu server vừa ngủ dậy (lỗi mạng/cold start).
+    statusMsg.value = 'Đang gửi yêu cầu...'
+    let jobId
+    for (let attempt = 1; ; attempt++) {
       try {
-        const res = await fetchVideoOnce()
-        if (!res.ok) {
-          const detail = await res.text().catch(() => '')
-          throw new Error(detail || `HTTP ${res.status}`)
-        }
-        const blob = await res.blob()
-        videoUrl.value = URL.createObjectURL(blob)
-        statusMsg.value = ''
+        jobId = await startJob()
         break
       } catch (err) {
-        // TypeError = "Failed to fetch" (NET ERROR), thường do server free-tier
-        // vừa ngủ dậy -> thử lại đúng 1 lần. Timeout thật (AbortError) thì không
-        // lặp để khỏi đợi thêm 4 phút nữa.
-        if (err.name === 'TypeError' && attempt < 2) {
-          statusMsg.value = 'Server đang khởi động, tự thử lại...'
+        if ((err.name === 'TypeError' || err.name === 'AbortError') && attempt < 2) {
+          statusMsg.value = 'Server đang khởi động, thử lại...'
           continue
         }
         throw err
       }
     }
+
+    statusMsg.value = 'AI đang dựng video...'
+    await pollUntilDone(jobId)
+
+    statusMsg.value = 'Đang tải video...'
+    const res = await fetch(`${BASE_URL}/api/video-result/${jobId}`)
+    if (!res.ok) throw new Error('Không tải được video kết quả')
+    const blob = await res.blob()
+    videoUrl.value = URL.createObjectURL(blob)
+    statusMsg.value = ''
   } catch (err) {
     if (err.name === 'AbortError') {
-      videoError.value = 'Quá thời gian chờ (server có thể đang quá tải). Thử lại sau giây lát nhé.'
+      videoError.value = 'Quá thời gian chờ khởi tạo. Thử lại nhé.'
     } else if (err.name === 'TypeError') {
       videoError.value = 'Không kết nối được server. Kiểm tra mạng rồi thử lại nhé.'
     } else {
