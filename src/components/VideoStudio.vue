@@ -3,7 +3,7 @@
     <div class="max-w-3xl mx-auto">
       <div class="text-center mb-10">
         <h2 class="text-4xl font-black uppercase tracking-tight mb-2">🎬 Tạo Video TikTok</h2>
-        <p class="text-gray-400">AI dựng cảnh động (zoom/pan điện ảnh) + caption + voice thành video 9:16. Mất ~1–2 phút.</p>
+        <p class="text-gray-400">AI biến kịch bản thành <b class="text-white">hội thoại 2 nhân vật</b> (mỗi người một giọng) + cảnh động + caption → video 9:16. Mất ~1–2 phút.</p>
       </div>
 
       <div class="bg-[#111] rounded-3xl border border-gray-800 p-8 space-y-6">
@@ -45,21 +45,40 @@
           <img :src="productImage" alt="preview" class="h-32 rounded-xl object-cover border border-gray-700" />
         </div>
 
-        <!-- Voice picker -->
-        <div>
-          <label class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2 block">Giọng đọc</label>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="v in voices"
-              :key="v.id"
-              @click="selectedVoice = v.id"
-              :class="selectedVoice === v.id ? 'bg-white text-black' : 'bg-[#222] text-gray-400 hover:text-white border border-gray-700'"
-              class="px-4 py-1.5 rounded-full text-xs font-bold transition"
-            >
-              {{ v.label }}
-            </button>
+        <!-- Persona pickers: 2 nhân vật hội thoại -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2 block">Nhân vật A</label>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="p in personas"
+                :key="'a-' + p.id"
+                @click="personaA = p.id"
+                :class="personaA === p.id ? 'bg-white text-black' : 'bg-[#222] text-gray-400 hover:text-white border border-gray-700'"
+                class="px-3 py-1.5 rounded-full text-xs font-bold transition"
+              >
+                {{ p.emoji }} {{ p.name }}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2 block">Nhân vật B</label>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="p in personas"
+                :key="'b-' + p.id"
+                @click="personaB = p.id"
+                :class="personaB === p.id ? 'bg-white text-black' : 'bg-[#222] text-gray-400 hover:text-white border border-gray-700'"
+                class="px-3 py-1.5 rounded-full text-xs font-bold transition"
+              >
+                {{ p.emoji }} {{ p.name }}
+              </button>
+            </div>
           </div>
         </div>
+        <p v-if="personaA === personaB" class="text-amber-400 text-xs -mt-3">
+          Đang chọn trùng nhân vật — hệ thống sẽ tự đổi Nhân vật B sang người khác để có 2 giọng.
+        </p>
 
         <!-- Generate -->
         <button
@@ -96,12 +115,14 @@ import { store } from '../store'
 
 const BASE_URL = 'https://tiktok-ai-backend-mq3e.onrender.com'
 
-const voices = [
-  { id: 'nova',    label: 'Nova — Nữ trẻ' },
-  { id: 'shimmer', label: 'Shimmer — Nữ nhẹ nhàng' },
-  { id: 'alloy',   label: 'Alloy — Nữ tự nhiên' },
-  { id: 'onyx',    label: 'Onyx — Nam trầm' },
-  { id: 'echo',    label: 'Echo — Nam rõ' },
+// Danh sách nhân vật (khớp VOICE_PERSONAS ở backend, theo id).
+const personas = [
+  { id: 'genz',   emoji: '✨', name: 'Cô Nàng Gen Z' },
+  { id: 'cool',   emoji: '😎', name: 'Anh Trai Cool' },
+  { id: 'mc',     emoji: '⚡', name: 'MC Năng Động' },
+  { id: 'chidai', emoji: '👑', name: 'Chị Đại Miền Nam' },
+  { id: 'rapper', emoji: '🎤', name: 'Rapper Đường Phố' },
+  { id: 'ballad', emoji: '🎵', name: 'Ca Sĩ Ballad' },
 ]
 
 // Khởi tạo từ dữ liệu nháp gửi sang từ tab Script (nếu có).
@@ -109,7 +130,8 @@ const voices = [
 const script = ref(store.videoDraft.script)
 const productImage = ref(store.videoDraft.productImage)
 const productName = ref(store.videoDraft.productName)
-const selectedVoice = ref(store.videoDraft.voice || 'nova')
+const personaA = ref('genz')   // nhân vật A mặc định
+const personaB = ref('cool')   // nhân vật B mặc định
 
 const loadingVideo = ref(false)
 const videoUrl = ref(null)
@@ -134,7 +156,8 @@ const startJob = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         script: script.value,
-        voice: selectedVoice.value,
+        persona_a_id: personaA.value,
+        persona_b_id: personaB.value,
         product_image_url: productImage.value,
         product_name: productName.value,
       }),
