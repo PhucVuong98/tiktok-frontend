@@ -98,6 +98,7 @@
               class="block text-center text-xs font-bold bg-black border border-white text-white px-4 py-3 rounded-xl hover:bg-white hover:text-black transition">
               Tải xuống MP4
             </a>
+            <TikTokPublish :job-id="lastJobId" />
           </div>
         </div>
       </template>
@@ -108,6 +109,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { authedFetch, refreshCredits, ApiError, BASE_URL } from '../api'
+import TikTokPublish from './TikTokPublish.vue'
 
 const gold = ref(null)
 const loadingPrices = ref(false)
@@ -116,6 +118,7 @@ const priceError = ref('')
 const mode = ref('dialogue')
 const loadingVideo = ref(false)
 const videoUrl = ref(null)
+const lastJobId = ref('')   // giữ job_id để đăng lên TikTok
 const videoError = ref('')
 const statusMsg = ref('')
 const elapsed = ref(0)
@@ -219,6 +222,7 @@ const generateVideo = async () => {
       }
     }
 
+    lastJobId.value = jobId
     statusMsg.value = 'AI đang dựng video...'
     await pollUntilDone(jobId)
 

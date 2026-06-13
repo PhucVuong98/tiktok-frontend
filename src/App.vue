@@ -81,6 +81,18 @@ onMounted(() => {
     }
   })
   getRedirectResult(auth).catch(() => {})
+
+  // Quay về từ OAuth TikTok (?tiktok=connected|error|expired).
+  // Nếu là cửa sổ popup -> báo cho trang chính rồi tự đóng; nếu không -> dọn URL.
+  const tt = new URLSearchParams(window.location.search).get('tiktok')
+  if (tt) {
+    if (window.opener && window.opener !== window) {
+      window.opener.postMessage({ tiktok: tt }, '*')
+      window.close()
+    } else {
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }
 })
 
 const logout = async () => {

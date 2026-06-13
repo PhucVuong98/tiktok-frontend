@@ -127,6 +127,7 @@
           >
             Tải xuống MP4
           </a>
+          <TikTokPublish :job-id="lastJobId" />
         </div>
       </div>
     </div>
@@ -137,6 +138,7 @@
 import { ref } from 'vue'
 import { store } from '../store'
 import { authedFetch, refreshCredits, ApiError, BASE_URL } from '../api'
+import TikTokPublish from './TikTokPublish.vue'
 
 // Danh sách nhân vật (khớp VOICE_PERSONAS ở backend, theo id).
 const personas = [
@@ -159,6 +161,7 @@ const personaB = ref('cool')   // nhân vật B (mode dialogue)
 
 const loadingVideo = ref(false)
 const videoUrl = ref(null)
+const lastJobId = ref('')   // giữ job_id để đăng lên TikTok
 const videoError = ref('')
 const statusMsg = ref('')   // thông báo trạng thái (không phải lỗi), vd "đang khởi động lại"
 const elapsed = ref(0)      // số giây đã trôi qua, hiển thị để biết đang chạy
@@ -254,6 +257,7 @@ const generateVideo = async () => {
       }
     }
 
+    lastJobId.value = jobId
     statusMsg.value = 'AI đang dựng video...'
     await pollUntilDone(jobId)
 
