@@ -13,6 +13,9 @@
         <li @click="store.view = 'video'"
           :class="store.view === 'video' ? 'border-b-2 border-black' : 'hover:border-b-2 hover:border-black'"
           class="pb-1 cursor-pointer">🎬 Video</li>
+        <li @click="store.view = 'gold'"
+          :class="store.view === 'gold' ? 'border-b-2 border-black' : 'hover:border-b-2 hover:border-black'"
+          class="pb-1 cursor-pointer">🥇 Giá Vàng</li>
         <li class="hover:border-b-2 hover:border-black pb-1 cursor-pointer">Cửa Hàng</li>
       </ul>
       <div class="flex items-center space-x-4">
@@ -46,6 +49,7 @@
         <ScriptGenerator />
       </template>
       <VideoStudio v-else-if="store.view === 'video'" />
+      <GoldStudio v-else-if="store.view === 'gold'" />
     </main>
   </div>
 </template>
@@ -58,6 +62,7 @@ import Hero from './components/Hero.vue'
 import TrendingHooks from './components/TrendingHooks.vue'
 import ScriptGenerator from './components/ScriptGenerator.vue'
 import VideoStudio from './components/VideoStudio.vue'
+import GoldStudio from './components/GoldStudio.vue'
 import AuthModal from './components/AuthModal.vue'
 import { store } from './store'
 import { refreshCredits } from './api'

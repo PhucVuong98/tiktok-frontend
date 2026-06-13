@@ -2,7 +2,7 @@ import { reactive } from 'vue'
 
 // State dùng chung giữa các component (không cần Vuex/Pinia cho app nhỏ)
 export const store = reactive({
-  view: 'home', // 'home' | 'video'
+  view: 'home', // 'home' | 'video' | 'gold'
   videoDraft: { script: '', productImage: '', productName: '', voice: 'nova' },
 
   // Auth + credit (đặt ở store để mọi component đọc/ghi chung)
