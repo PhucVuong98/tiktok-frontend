@@ -30,16 +30,18 @@
           </div>
         </div>
 
-        <!-- Vàng trong nước -->
-        <div class="bg-[#111] rounded-3xl border border-gray-800 p-6 mb-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="text-xs text-gray-400 font-bold uppercase tracking-widest">
-              Vàng trong nước · {{ gold.domestic_source }}
-            </div>
-            <button @click="loadPrices" :disabled="loadingPrices"
-              class="text-xs text-gray-400 hover:text-white border border-gray-700 rounded-full px-3 py-1 transition disabled:opacity-40">
-              ↻ Làm mới
-            </button>
+        <!-- Vàng trong nước (nhiều nguồn: PNJ, DOJI...) -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-xs text-gray-400 font-bold uppercase tracking-widest">Vàng trong nước</div>
+          <button @click="loadPrices" :disabled="loadingPrices"
+            class="text-xs text-gray-400 hover:text-white border border-gray-700 rounded-full px-3 py-1 transition disabled:opacity-40">
+            ↻ Làm mới
+          </button>
+        </div>
+        <div v-for="src in gold.domestic" :key="src.source" class="bg-[#111] rounded-3xl border border-gray-800 p-6 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-black text-yellow-400">{{ src.source }}</span>
+            <span v-if="src.updated" class="text-xs text-gray-600">{{ src.updated }}</span>
           </div>
           <table class="w-full text-sm">
             <thead>
@@ -50,19 +52,18 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(g, i) in gold.domestic" :key="i" class="border-t border-gray-800">
+              <tr v-for="(g, i) in src.rows" :key="i" class="border-t border-gray-800">
                 <td class="py-2.5 pr-2 text-gray-200">{{ g.name }}</td>
-                <td class="py-2.5 text-right text-gray-300 tabular-nums">{{ fmt(g.buy) }}</td>
-                <td class="py-2.5 text-right font-bold text-yellow-400 tabular-nums">{{ fmt(g.sell) }}</td>
+                <td class="py-2.5 text-right text-gray-300 tabular-nums">{{ g.buy ? fmt(g.buy) : '—' }}</td>
+                <td class="py-2.5 text-right font-bold text-yellow-400 tabular-nums">{{ g.sell ? fmt(g.sell) : '—' }}</td>
               </tr>
             </tbody>
           </table>
-          <p class="text-gray-600 text-xs mt-3">
-            Đơn vị: VNĐ / chỉ.
-            <span v-if="gold.domestic_updated"> Cập nhật: {{ gold.domestic_updated }}.</span>
-            <span v-if="gold.stale" class="text-amber-500"> (dữ liệu tạm thời từ bộ nhớ đệm)</span>
-          </p>
         </div>
+        <p class="text-gray-600 text-xs mb-6">
+          Đơn vị: VNĐ / chỉ.
+          <span v-if="gold.stale" class="text-amber-500"> (dữ liệu tạm thời từ bộ nhớ đệm)</span>
+        </p>
 
         <!-- Tạo video -->
         <div class="bg-[#111] rounded-3xl border border-gray-800 p-6 space-y-4">
